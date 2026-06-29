@@ -1,24 +1,32 @@
-name: Checkmarx One Scan
+name: Checkmarx AST Scan
+ 
 on:
   push:
-    branches:
-      - main
-      - master
-      - dev
+    branches: [ main ]
+  pull_request:
+ 
 jobs:
-  build:
+  checkmarx-scan:
     runs-on: ubuntu-latest
+ 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Checkmarx One CLI Action
-        uses: checkmarx/ast-github-action@2.3.36
+ 
+      - name: Checkmarx AST Github Action
+        uses: Checkmarx/ast-github-action@2.3.36
         with:
-          project_name: ${{ github.repository }}
-          cx_tenant: ama-partners
-          base_uri: https://ind.ast.checkmarx.net 
+          base_uri: ${{ secrets.CX_BASE_URI }}
+          cx_tenant: ${{ secrets.CX_TENANT }}
           cx_client_id: ${{ secrets.CX_CLIENT_ID }}
           cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }}
+ 
+          project_name: ${{ github.repository }}
           branch: ${{ github.head_ref || github.ref_name }}
-          scan_params: "--project-groups Inflow --project-tags dhruv-demo"
+ 
+          scan_params: "--project-groups Inflow --project-tags dhruv-demo --report-format sarif --output-path ."
+ 
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: cx_result.sarif
